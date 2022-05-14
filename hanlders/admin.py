@@ -5,12 +5,16 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from loader import dp
 from aiogram.types import Message
 
-@dp.message_handler(commands='moderator',is_chat_admin=True)
-async def make_changes(message:Message):
-    global ID
-    ID=message.from_user.id
-    await bot.send_message(message.from_user.id,"ЧТО НАДО ХОЗЯИН", reply_markup=admin_keybroad)
-    await
+
+@dp.message_handler(commands='moderator', is_chat_admin=True)
+
+async def make_changes(message: Message):
+    global admin_id
+    admin_id = message.from_user.id
+    await bot.send_message(message.from_user.id, "ЧТО НАДО ХОЗЯИН", reply_markup=admin_keybroad)
+    await message.delete
+
+
 async def on_start(_):
     print("Бот стартовал")
 
@@ -20,6 +24,14 @@ class FSMAdmin(StatesGroup):
     name = State()
     description = State()
 
+def check_rules(func):
+   async def wrapper(message:Message):
+        if message.from_user == admin_id:
+            return await func(message)
+
+        else:
+            return await message.reply('bfjhgrhghrghr')
+    return wrapper
 
 @dp.message_handler(commands='Загрузить', state=None)
 async def sm_star(message: Message):
@@ -27,9 +39,10 @@ async def sm_star(message: Message):
 
     await message.reply('Загрузи иконку')
 
-
+@check_rules
 @dp.message_handler(content_types=['photo'], state=FSMAdmin.icon)
 async def load_icon(message: Message, state: FSMContext):
+    if message.from_user.id == admin_id:
     async with state.proxy() as data:
         data['photo'] = message.photo[0].file_id
     await FSMAdmin.next()
